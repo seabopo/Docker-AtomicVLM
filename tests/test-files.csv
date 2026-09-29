@@ -1,0 +1,24 @@
+# Media files for tests/Test-MediaFile.ps1. Comment lines (starting with #) are only allowed here, before the
+# "Path" header row. A # line below the header is read as a file path.
+#
+# Each Path is a path INSIDE the container, not a path on your computer. The docker run command maps a folder on
+# your computer to /media in the container:
+#
+#   docker run --rm \
+#       -v "/Users/sean/Repos/@psModules/sample-media:/media" \
+#       -v "$PWD/tests:/tests:ro" \
+#       atomicvlm pwsh -NoLogo -NoProfile -File /tests/Test-MediaFile.ps1
+#
+# With that mapping, a file on your computer at:
+#   /Users/sean/Repos/@psModules/sample-media/Movies/Abominable (2019) [1080p WS iTunes+ HD DD].m4v
+# is listed here as:
+#   /media/Movies/Abominable (2019) [1080p WS iTunes+ HD DD].m4v
+#
+# To test files in a different folder, change the left side of the -v mapping (the folder on your computer) and
+# list the files here relative to /media. Keep the mapping writable (no :ro), because the test writes a .json file
+# next to each media file. Paths may contain spaces and don't need quotes; a path containing a comma must be
+# wrapped in double quotes.
+Path
+/media/TVEpisodes/! 1 of Each/Breaking In - s01e06 - Breaking Out [1080p WS iTunes HD DD].m4v
+/media/TVEpisodes/! 1 of Each/The Brady Bunch - s02e01 - The Dropout [480p FS SDTV AU DS].m4v
+/media/Movies/Abominable (2019) [1080p WS iTunes+ HD DD].m4v
