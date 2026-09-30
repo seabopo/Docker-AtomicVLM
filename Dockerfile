@@ -4,7 +4,8 @@
 # Base image : .NET 10 SDK on Ubuntu 24.04 (Noble), which includes PowerShell.
 # CLI tools  : MediaInfo (from MediaArea's apt repository), FFmpeg (ffmpeg, ffprobe, from the Ubuntu archive) and
 #              AtomicParsley (compiled from its upstream release source during the build).
-# Modules    : po.Toolkit, po.MediaInfo, po.FFMPEG, po.AtomicParsley and po.MediaClasses, from the PowerShell Gallery.
+# Modules    : po.Toolkit, po.MediaInfo, po.FFMPEG, po.AtomicParsley, po.MediaClasses and po.TMDB, from the PowerShell
+#              Gallery.
 # Licenses   : /usr/share/licenses/atomicvlm/ (see THIRD_PARTY_NOTICES.md).
 #==================================================================================================================
 
@@ -88,7 +89,10 @@ RUN curl -fsSLo /tmp/repo-mediaarea.deb \
 #
 # Installed for all users (/usr/local/share/powershell/Modules), which is on every user's PSModulePath.
 # Importing po.MediaClasses afterwards loads po.Toolkit, po.AtomicParsley and po.MediaInfo as dependencies and
-# confirms the modules load.
+# confirms the modules load; po.FFMPEG and po.TMDB are imported to confirm they load too.
+#
+# po.TMDB calls the TMDB API, which needs an API key. No key is included in the image; each user supplies their own
+# at runtime (see THIRD_PARTY_NOTICES.md for TMDB's terms of use).
 #
 # PowerShell does not auto-load classes the way it auto-loads functions, so po.MediaClasses must be imported
 # explicitly before its classes ([MediaFile], [Movie], etc.) can be used. The all-users, all-hosts profile
@@ -99,9 +103,10 @@ RUN curl -fsSLo /tmp/repo-mediaarea.deb \
 
 RUN pwsh -NoLogo -NoProfile -Command " \
         \$ErrorActionPreference = 'Stop'; \
-        Install-PSResource -Name po.Toolkit, po.MediaInfo, po.FFMPEG, po.AtomicParsley, po.MediaClasses \
+        Install-PSResource -Name po.Toolkit, po.MediaInfo, po.FFMPEG, po.AtomicParsley, po.MediaClasses, po.TMDB \
                            -Repository PSGallery -Scope AllUsers -TrustRepository; \
         Import-Module -Name po.FFMPEG, po.MediaClasses; \
+        Import-Module -Name po.TMDB; \
         Get-Module -Name po.* | Format-Table -Property Name, Version -AutoSize; \
         Add-Content -Path \$PROFILE.AllUsersAllHosts -Value 'Import-Module -Name po.MediaClasses'; \
         Write-Host ('All-users profile: {0}' -f \$PROFILE.AllUsersAllHosts) \

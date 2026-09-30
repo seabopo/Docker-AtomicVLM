@@ -18,7 +18,7 @@ not affiliated with the FFmpeg project and do not own FFmpeg.
 
 This software is based in part on the work of the Independent JPEG Group.
 
-This product uses the TMDB API but is not endorsed or certified by TMDB.
+This product uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.
 
 ## Base image
 
@@ -29,7 +29,7 @@ arm64. It runs on Linux, and on macOS or Windows through Docker Desktop's Linux 
 
 | Component | License | License text |
 |-----------|---------|--------------|
-| AtomicVLM PowerShell modules: po.AtomicVLM, po.Toolkit, po.MediaClasses, po.MediaInfo, po.AtomicParsley, po.FFMPEG | MIT | [below](#atomicvlm-powershell-modules) |
+| AtomicVLM PowerShell modules: po.AtomicVLM, po.Toolkit, po.MediaClasses, po.MediaInfo, po.AtomicParsley, po.FFMPEG, po.TMDB | MIT | [below](#atomicvlm-powershell-modules) |
 | .NET SDK 10 (base image) | MIT | https://github.com/dotnet/sdk/blob/main/LICENSE.TXT |
 | PowerShell (included in the .NET SDK base image) | MIT | https://github.com/PowerShell/PowerShell/blob/master/LICENSE.txt |
 | Ubuntu 24.04 packages (base image and apt dependencies) | Various, one per package | `/usr/share/doc/<package>/copyright` inside the image |
@@ -419,6 +419,7 @@ below, with the copyright year shown.
 | po.MediaInfo | Copyright (c) 2025 seabopo | https://github.com/seabopo/PowerShell-MediaInfo |
 | po.AtomicParsley | Copyright (c) 2024 seabopo | https://github.com/seabopo/PowerShell-AtomicParsley |
 | po.FFMPEG | Copyright (c) 2025 seabopo | https://github.com/seabopo/PowerShell-FFMPEG |
+| po.TMDB | Copyright (c) 2025 Sean Powell (seabopo) | https://github.com/seabopo/PowerShell-TMDB |
 
 ```
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -447,8 +448,14 @@ SOFTWARE.
 AtomicVLM reads movie metadata from online services at runtime. No data from these services is
 included in the image.
 
-- **TMDB.** This product uses the TMDB API but is not endorsed or certified by TMDB. Use of the
-  API is subject to TMDB's terms of use: https://www.themoviedb.org/api-terms-of-use. Each user
-  supplies their own TMDB API key.
-- **IMDb.** IMDb content is subject to IMDb's Conditions of Use:
-  https://www.imdb.com/conditions.
+- **TMDB.** This product uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise
+  approved by TMDB. The po.TMDB module calls the TMDB API; the module's own code is MIT-licensed
+  (above), but the data and images it retrieves belong to TMDB and its contributors and are not
+  covered by that license. Use of the API is subject to the TMDB API Terms of Use:
+  https://www.themoviedb.org/api-terms-of-use. Under those terms:
+  - the API is free for non-commercial use only; commercial use requires a separate written
+    agreement with TMDB;
+  - any application that shows TMDB data or images must attribute TMDB with the notice above and
+    the TMDB logo, kept less prominent than the application's own name or logo (see
+    https://www.themoviedb.org/about/logos-attribution); and
+  - each user must supply their own TMDB API key. No key is included in this image.
