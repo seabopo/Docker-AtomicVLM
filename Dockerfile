@@ -2,11 +2,25 @@
 # AtomicVLM - Docker Image
 #
 # Base image : .NET 10 SDK on Ubuntu 24.04 (Noble), which includes PowerShell.
-# CLI tools  : MediaInfo (from MediaArea's apt repository), FFmpeg (ffmpeg, ffprobe, from the Ubuntu archive) and
+# CLI tools  : MediaInfo (from MediaArea's apt repository).
+#              FFmpeg (ffmpeg, ffprobe, from the Ubuntu archive).
 #              AtomicParsley (compiled from its upstream release source during the build).
-# Modules    : po.Toolkit, po.MediaInfo, po.FFMPEG, po.AtomicParsley, po.MediaClasses and po.TMDB, from the PowerShell
-#              Gallery.
+# Modules    : po.AtomicVLM
+#              po.Toolkit       from the PowerShell Gallery.
+#              po.MediaInfo     from the PowerShell Gallery.
+#              po.FFMPEG        from the PowerShell Gallery.
+#              po.AtomicParsley from the PowerShell Gallery.
+#              po.MediaClasses  from the PowerShell Gallery.
+#              po.TMDB          from the PowerShell Gallery.
 # Licenses   : /usr/share/licenses/atomicvlm/ (see THIRD_PARTY_NOTICES.md).
+#
+# Build targets:
+#   production : the default (last stage). Everything in the base stage, nothing else.
+#                  docker build -t atomicvlm .
+#   test       : the base stage plus the module folders in test-modules (see test-modules/README.md).
+#                  docker build --target test -t atomicvlm:test .
+#   dev        : a copy of the test stage, for additional development-only commands.
+#                  docker build --target dev -t atomicvlm:dev .
 #==================================================================================================================
 
 #------------------------------------------------------------------------------------------------------------------
@@ -29,10 +43,10 @@ RUN apt-get update \
  && cmake --build /build --parallel
 
 #------------------------------------------------------------------------------------------------------------------
-# Final image
+# Base stage: everything shared by the production and test images
 #------------------------------------------------------------------------------------------------------------------
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0-noble
+FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS base
 
 # MediaInfo versions from MediaArea's repository (https://mediaarea.net/en/Repos). Update THIRD_PARTY_NOTICES.md
 # when these change.
@@ -103,14 +117,30 @@ RUN curl -fsSLo /tmp/repo-mediaarea.deb \
 
 RUN pwsh -NoLogo -NoProfile -Command " \
         \$ErrorActionPreference = 'Stop'; \
-        Install-PSResource -Name po.Toolkit, po.MediaInfo, po.FFMPEG, po.AtomicParsley, po.MediaClasses, po.TMDB \
+        Install-PSResource -Name po.Toolkit, po.AtomicParsley, po.MediaInfo, po.MediaClasses, po.FFMPEG, po.TMDB \
                            -Repository PSGallery -Scope AllUsers -TrustRepository; \
-        Import-Module -Name po.FFMPEG, po.MediaClasses; \
+        Import-Module -Name po.Toolkit; \
+        Import-Module -Name po.AtomicParsley; \
+        Import-Module -Name po.MediaInfo; \
+        Import-Module -Name po.MediaClasses; \
+        Import-Module -Name po.FFMPEG; \
         Import-Module -Name po.TMDB; \
         Get-Module -Name po.* | Format-Table -Property Name, Version -AutoSize; \
         Add-Content -Path \$PROFILE.AllUsersAllHosts -Value 'Import-Module -Name po.MediaClasses'; \
         Write-Host ('All-users profile: {0}' -f \$PROFILE.AllUsersAllHosts) \
     "
+
+#------------------------------------------------------------------------------------------------------------------
+# AtomicVLM and media folders
+#
+# /AtomicVLM is the mount point for external storage, mapped at runtime (for example, -v /host/path:/AtomicVLM).
+# /media is the mount point for media files (for example, -v /host/media:/media). Ubuntu's base image already has
+# an empty /media folder; it is created here too so the Dockerfile documents it as an expected mount point.
+# Docker would create both at mount time anyway. Anything the image put in these folders would be hidden by the
+# mounts, so they are left empty.
+#------------------------------------------------------------------------------------------------------------------
+
+RUN mkdir -p /AtomicVLM /Media
 
 #------------------------------------------------------------------------------------------------------------------
 # Licenses and third-party notices
@@ -125,4 +155,79 @@ COPY LICENSE \
      /usr/share/licenses/atomicvlm/
 COPY licenses/ /usr/share/licenses/atomicvlm/licenses/
 
-CMD ["pwsh"]
+#------------------------------------------------------------------------------------------------------------------
+# Start command
+#
+# Starts the AtomicVLM services (po.AtomicVLM's Start-avlmAppServices), which run until the container stops. The
+# function auto-loads po.AtomicVLM by name; the session's profile imports po.MediaClasses first. All targets
+# inherit this command. To get a PowerShell prompt instead, add pwsh after the image name in docker run.
+#------------------------------------------------------------------------------------------------------------------
+
+CMD ["pwsh", "-NoLogo", "-Command", "Start-avlmAppServices"]
+
+#------------------------------------------------------------------------------------------------------------------
+# Test stage: base + test modules  (docker build --target test -t atomicvlm:test .)
+#
+# Copies each module folder in this repository's test-modules folder into the all-users module folder, where the
+# PowerShell Gallery modules are installed, so they are available for auto-loading in every session. If a module
+# folder with the same name already exists (for example, a module installed from the Gallery), it is deleted and
+# replaced, so there is only ever one copy of each module.
+#
+# test-modules is bind-mounted read-only for this step only. It is not copied into the image; only the module
+# folders inside it are. Files directly in test-modules (such as its README) are ignored. The folder may contain no
+# modules. The build log lists every po.* module available afterwards.
+#
+# Only the test and dev targets run this step. The production target never reads test-modules, so test modules
+# cannot end up in a production image.
+#------------------------------------------------------------------------------------------------------------------
+
+FROM base AS test
+
+RUN --mount=type=bind,source=test-modules,target=/tmp/test-modules \
+    modules=/usr/local/share/powershell/Modules \
+ && for dir in /tmp/test-modules/*/; do \
+        [ -d "$dir" ] || continue; \
+        name=$(basename "$dir"); \
+        if [ -e "$modules/$name" ]; then echo "Replacing module: $name"; else echo "Adding module: $name"; fi; \
+        rm -rf "${modules:?}/$name"; \
+        cp -R "$dir" "$modules/$name"; \
+    done \
+ && pwsh -NoLogo -NoProfile -Command " \
+        Get-Module -ListAvailable -Name po.* | Sort-Object -Property Name, Version | \
+            Format-Table -Property Name, Version, ModuleBase -AutoSize | Out-String -Width 250 \
+    "
+
+#------------------------------------------------------------------------------------------------------------------
+# Dev stage: base + test modules + development commands  (docker build --target dev -t atomicvlm:dev .)
+#
+# Starts as a copy of the test stage: the same test-modules step (see the test stage above). Add development-only
+# commands at the end of this stage; they are not included in the test or production images.
+#------------------------------------------------------------------------------------------------------------------
+
+FROM base AS dev
+
+RUN --mount=type=bind,source=test-modules,target=/tmp/test-modules \
+    modules=/usr/local/share/powershell/Modules \
+ && for dir in /tmp/test-modules/*/; do \
+        [ -d "$dir" ] || continue; \
+        name=$(basename "$dir"); \
+        if [ -e "$modules/$name" ]; then echo "Replacing module: $name"; else echo "Adding module: $name"; fi; \
+        rm -rf "${modules:?}/$name"; \
+        cp -R "$dir" "$modules/$name"; \
+    done \
+ && pwsh -NoLogo -NoProfile -Command " \
+        Get-Module -ListAvailable -Name po.* | Sort-Object -Property Name, Version | \
+            Format-Table -Property Name, Version, ModuleBase -AutoSize | Out-String -Width 250 \
+    "
+
+# Empty po.AtomicVLM module folder in the all-users module folder. 
+# If test-modules already supplied a po.AtomicVLM folder, it is left as is.
+RUN mkdir -p /usr/local/share/powershell/Modules/po.AtomicVLM
+
+#------------------------------------------------------------------------------------------------------------------
+# Production stage: base only  (docker build -t atomicvlm .)
+#
+# The last stage in the file, so it is what a plain "docker build" produces.
+#------------------------------------------------------------------------------------------------------------------
+
+FROM base AS production

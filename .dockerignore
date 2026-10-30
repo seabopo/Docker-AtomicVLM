@@ -6,3 +6,5 @@
 !FFMPEG_LICENSE.md
 !ATOMICPARSLEY_LICENSE
 !licenses/
+!test-modules/
+test-modules/README.md
