@@ -1,3 +1,5 @@
 # Local test modules: ignore everything in test-modules except its README.
 test-modules/*
 !test-modules/README.md
+run/_init_token.ps1
+.DS_Store

@@ -17,7 +17,8 @@
 # CSV format: a header row with a "Path" column, then one media file path per row. Paths are paths inside the
 # container (for example, under /media). Blank rows are ignored. See tests/test-files.csv.
 #
-# Run from the root of this repository, after building the image (docker build -t atomicvlm .). The media folder
+# Run from the root of this repository, after building the image (docker build -t atomicvlm ., or for the test
+# image with test modules: docker build --target test -t atomicvlm:test ., and run atomicvlm:test). The media folder
 # is mounted read-write so the JSON files can be written; the tests folder is mounted read-only:
 #
 #   docker run --rm \
