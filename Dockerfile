@@ -51,7 +51,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS base
 # MediaInfo versions from MediaArea's repository (https://mediaarea.net/en/Repos). Update THIRD_PARTY_NOTICES.md
 # when these change.
 ARG MEDIAAREA_REPO_VERSION=1.0-26
-ARG MEDIAINFO_VERSION=26.05-1
+ARG MEDIAINFO_VERSION=26.10-1
 ARG ZENLIB_VERSION=0.4.41-1
 
 LABEL org.opencontainers.image.title="AtomicVLM" \

@@ -3,3 +3,4 @@ test-modules/*
 !test-modules/README.md
 run/_init_token.ps1
 .DS_Store
+.github/workflows/create_release.yml

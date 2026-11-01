@@ -80,8 +80,8 @@ MediaInfo and its ZenLib library come from MediaArea's own apt repository
 
 | Package | Source | Version | License |
 |---------|--------|---------|---------|
-| `mediainfo` | MediaArea | 26.05-1 | BSD-2-Clause |
-| `libmediainfo0v5` | MediaArea | 26.05-1 | BSD-2-Clause; bundles TinyXML-2 (zlib) and Brian Gladman's AES code (Gladman BSD-style) |
+| `mediainfo` | MediaArea | 26.10-1 | BSD-2-Clause |
+| `libmediainfo0v5` | MediaArea | 26.10-1 | BSD-2-Clause; bundles TinyXML-2 (zlib) and Brian Gladman's AES code (Gladman BSD-style) |
 | `libzen0v5` | MediaArea | 0.4.41-1 | zlib ([details](#zenlib)) |
 | `repo-mediaarea` | MediaArea | 1.0-26 | MediaArea's apt signing key and repository configuration |
 | `libcurl3t64-gnutls` | Ubuntu | 8.5.0-2ubuntu10.11 | curl, linked against GnuTLS (LGPL-2.1-or-later) |
